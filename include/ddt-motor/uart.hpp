@@ -45,4 +45,4 @@ class Uart {
 
 }  // namespace ddt
 
-#endif
+#endif  // DDT_MOTOR_UART_HPP_

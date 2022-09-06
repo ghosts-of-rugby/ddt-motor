@@ -25,8 +25,8 @@ int Uart::Open() {
   }
   // fcntl(fd, F_SETFL, 0);
 
-  cfsetispeed(&tty, B115200);
-  cfsetospeed(&tty, B115200);
+  cfsetispeed(&tty, static_cast<speed_t>(baudrate));
+  cfsetospeed(&tty, static_cast<speed_t>(baudrate));
   tty.c_cflag &= ~PARENB;  // Clear parity bit, disabling parity (most common)
   tty.c_cflag &= ~CSTOPB;  // Clear stop field, only one stop bit used in
                            // communication (most common)
@@ -55,6 +55,8 @@ int Uart::Open() {
   tty.c_cc[VTIME] = 1;
   tty.c_cc[VMIN] = 0;
 
+  cfmakeraw(&tty);
+
   // tcflush(fd, TCIFLUSH);
   if (tcsetattr(fd, TCSANOW, &tty) != 0) {
     throw std::runtime_error(
@@ -78,9 +80,9 @@ std::vector<uint8_t> Uart::Receive() {
   // read size of in buffer
   std::size_t available_size = 0;
   ioctl(fd, FIONREAD, &available_size);
-  std::vector<uint8_t> data(10);
-  data[0] = 9;
-  size_t size = read(fd, data.data(), 100);
+  std::cout << available_size << std::endl;
+  std::vector<uint8_t> data(available_size);
+  size_t size = read(fd, data.data(), available_size);
   return data;
 }
 
