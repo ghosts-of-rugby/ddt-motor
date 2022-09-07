@@ -13,7 +13,7 @@ constexpr T combine(std::uint8_t a, std::uint8_t b) {
   return a << 8 | b;
 }
 
-template <std::input_iterator I>
+template <class I>
 bool check_data(I begin, I end) {
   return (*end) == dallas_crc8(begin, end - 1);
 }

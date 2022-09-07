@@ -7,7 +7,7 @@
 
 namespace ddt {
 
-template <std::input_iterator I>
+template <class I>
 uint8_t dallas_crc8(I begin, I end) {
   uint8_t crc = 0;
   for (auto it = begin; it != end; ++it) {
