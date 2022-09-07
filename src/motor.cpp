@@ -43,7 +43,7 @@ void Motor::SetMode(DriveMode mode) {
 
 std::optional<Motor::State> Motor::DriveVelocity(double velocity, double acc,
                                                  bool brake) {
-  int16_t val = static_cast<int16_t>(velocity);
+  int16_t val = static_cast<int16_t>(velocity * 60.0 / 2 / M_PI);
   std::vector<uint8_t> send = {id,    //
                                0x64,  //
                                uint8_t(val >> 8),
@@ -60,7 +60,6 @@ std::optional<Motor::State> Motor::DriveVelocity(double velocity, double acc,
 std::optional<Motor::State> Motor::Observe() {
   std::vector<uint8_t> send = {id, 0x74, 0, 0, 0, 0, 0, 0, 0};
   send.emplace_back(dallas_crc8(send.begin(), send.end()));
-  std::this_thread::sleep_for(50ms);
   uart->Send(send);
   std::this_thread::sleep_for(sleep_time);
   auto data = uart->Receive();

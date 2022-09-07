@@ -40,17 +40,17 @@ int main(int argc, char const *argv[]) {
   double motor1_input = 0.0;
   double motor2_input = 0.0;
 
-  double motor1_angle_ref = -113.0;
-  double motor2_angle_ref = 420.0;
+  double motor1_angle_ref = -7.0;
+  double motor2_angle_ref = 7.0;
 
-  double motor1_velocity_max = 10.0;
-  double motor2_velocity_max = 20.0;
+  double motor1_velocity_max = 5.0;
+  double motor2_velocity_max = 5.0;
 
   auto start = std::chrono::high_resolution_clock::now();
 
   for (int i = 0; i < 1000; i++) {
-    auto state1 = motor1.DriveVelocity(motor1_input, 0.0);
-    auto state2 = motor2.DriveVelocity(motor2_input, 0.0);
+    auto state1 = motor1.DriveVelocity(motor1_input);
+    auto state2 = motor2.DriveVelocity(motor2_input);
 
     if (state1.has_value() && state2.has_value()) {
       auto elapsed = std::chrono::duration_cast<second>(
@@ -58,8 +58,8 @@ int main(int argc, char const *argv[]) {
       double angle1 = filter1.Update(state1->angle);
       double angle2 = filter2.Update(state2->angle);
 
-      motor1_input = -0.5 * (motor1_angle_ref - angle1);
-      motor2_input = -0.5 * (motor2_angle_ref - angle2);
+      motor1_input = -5 * (motor1_angle_ref - angle1);
+      motor2_input = -5 * (motor2_angle_ref - angle2);
 
       motor1_input =
           clip(motor1_input, -motor1_velocity_max, motor1_velocity_max);
@@ -72,7 +72,7 @@ int main(int argc, char const *argv[]) {
       std::cout << "connection error!!" << std::endl;
     }
   }
-  auto state1 = motor1.DriveVelocity(0.0, 0.0);
-  auto state2 = motor2.DriveVelocity(0.0, 0.0);
+  auto state1 = motor1.DriveVelocity(0.0);
+  auto state2 = motor2.DriveVelocity(0.0);
   return 0;
 }
