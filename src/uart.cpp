@@ -80,7 +80,6 @@ std::vector<uint8_t> Uart::Receive() {
   // read size of in buffer
   std::size_t available_size = 0;
   ioctl(fd, FIONREAD, &available_size);
-  std::cout << available_size << std::endl;
   std::vector<uint8_t> data(available_size);
   size_t size = read(fd, data.data(), available_size);
   return data;

@@ -1,5 +1,6 @@
 #include "ddt-motor/motor.hpp"
 
+#include <cmath>
 #include <iostream>
 #include <thread>
 
@@ -7,27 +8,82 @@
 
 namespace ddt {
 
+template <typename T = std::int16_t>
+constexpr T combine(std::uint8_t a, std::uint8_t b) {
+  return a << 8 | b;
+}
+
+template <std::input_iterator I>
+bool check_data(I begin, I end) {
+  return (*end) == dallas_crc8(begin, end - 1);
+}
+
 std::vector<Motor*> Motor::motors;
 
-Motor::Motor(std::shared_ptr<Uart> uart, uint8_t id) : uart(uart), id(id) {
+Motor::Motor(std::shared_ptr<Uart> uart, uint8_t id,
+             std::chrono::milliseconds sleep_time)
+    : uart(uart), id(id), sleep_time(sleep_time) {
   motors.emplace_back(this);
 }
 
-void Motor::Drive(double drive_value) {
-  uint16_t val = static_cast<uint16_t>(drive_value);
-  std::vector<uint8_t> send = {
-      id, 0x64, uint8_t(val >> 8), uint8_t(val & 0x00ff), 0, 0, 0, 0, 0};
-  send.emplace_back(dallas_crc8(send.begin(), send.end()));
-  uart->Send(send);
-  std::this_thread::sleep_for(std::chrono::milliseconds(1));
-  auto data = uart->Receive();
-  if (data.size() != 0) {
-    std::cout << int(id) << "," << int(data[0]) << std::endl;
-    return;
+void Motor::SetMode(DriveMode mode) {
+  std::vector<uint8_t> send = {id, 0xA0, 0, 0, 0,
+                               0,  0,    0, 0, static_cast<uint8_t>(mode)};
+
+  for (int i = 0; i < 10; i++) {
+    uart->Send(send);
+    std::this_thread::sleep_for(sleep_time);
+    auto state = Observe();
+    if (state.has_value() && state.value().mode == mode) {
+      return;
+    }
   }
-  std::cout << int(id) << "aaa" << std::endl;
-  return;
-  // throw std::runtime_error("ponyo");
+  throw std::runtime_error("SetMode failed");
+}
+
+std::optional<Motor::State> Motor::DriveVelocity(double velocity, double acc,
+                                                 bool brake) {
+  int16_t val = static_cast<int16_t>(velocity);
+  std::vector<uint8_t> send = {id,    //
+                               0x64,  //
+                               uint8_t(val >> 8),
+                               uint8_t(val & 0x00ff),
+                               0,
+                               0,
+                               static_cast<uint8_t>(acc),
+                               uint8_t((brake) ? 0xFF : 0x00),
+                               0};
+  send.emplace_back(dallas_crc8(send.begin(), send.end()));
+  return Drive(send);
+}
+
+std::optional<Motor::State> Motor::Observe() {
+  std::vector<uint8_t> send = {id, 0x74, 0, 0, 0, 0, 0, 0, 0};
+  send.emplace_back(dallas_crc8(send.begin(), send.end()));
+  std::this_thread::sleep_for(50ms);
+  uart->Send(send);
+  std::this_thread::sleep_for(sleep_time);
+  auto data = uart->Receive();
+
+  if (data.size() == 10 && data[0] == id) {
+    Motor::State state{
+        .id = data[0],
+        .mode = static_cast<Motor::DriveMode>(data[1]),
+        .current = static_cast<double>(combine<int16_t>(data[2], data[3])) /
+                   32767.0 * 8.0,
+        .velocity = static_cast<double>(combine<int16_t>(data[4], data[5])) *
+                    2 * M_PI / 60.0,
+        .angle = static_cast<double>(data[7]) / 256.0 * 2 * M_PI,
+        .stator_temperature = 0.0,
+        .over_heat = false,
+        .stall = false,
+        .phase_over_current = false,
+        .bus_over_currnet = false,
+        .sensor_fault = false,
+    };
+    return state;
+  }
+  return std::nullopt;
 }
 
 void Motor::SetID(uint8_t id, std::shared_ptr<Uart> uart) {
@@ -47,15 +103,41 @@ void Motor::CheckID(std::shared_ptr<Uart> uart) {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     auto received = uart->Receive();
     if (received.size() > 0) {
-      std::cout << received.size() << std::endl;
-      std::cout << int(received.back()) << ","
+      std::cout << "CRC8 Check : " << int(received.back()) << " == "
                 << int(dallas_crc8(received.begin(), received.end() - 1))
                 << std::endl;
-      std::cout << int(received[0]) << std::endl;
+      std::cout << "Written ID : " << int(received[0]) << std::endl;
       return;
     }
   }
-  throw std::runtime_error("ponyo");
+  throw std::runtime_error("check id failed");
+}
+
+std::optional<Motor::State> Motor::Drive(std::vector<uint8_t> send_data) {
+  uart->Send(send_data);
+  std::this_thread::sleep_for(sleep_time);
+  auto data = uart->Receive();
+
+  if (data.size() == 10 && data[0] == id) {
+    Motor::State state{
+        .id = data[0],
+        .mode = static_cast<Motor::DriveMode>(data[1]),
+        .current = static_cast<double>(combine<int16_t>(data[2], data[3])) /
+                   32767.0 * 8.0,
+        .velocity = static_cast<double>(combine<int16_t>(data[4], data[5])) *
+                    2 * M_PI / 60.0,
+        .angle = static_cast<double>(combine<int16_t>(data[6], data[7])) /
+                 32767.0 * 2 * M_PI,
+        .stator_temperature = 0.0,
+        .over_heat = false,
+        .stall = false,
+        .phase_over_current = false,
+        .bus_over_currnet = false,
+        .sensor_fault = false,
+    };
+    return state;
+  }
+  return std::nullopt;
 }
 
 }  // namespace ddt

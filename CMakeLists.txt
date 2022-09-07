@@ -11,6 +11,6 @@ file(GLOB src_files src/*.cpp)
 add_library(ddtmotor ${src_files})
 target_include_directories(ddtmotor PUBLIC include)
 
-target_compile_options(ddtmotor PRIVATE -O3 -Wall -Wextra -Wno-long-long -pedantic)
+target_compile_options(ddtmotor PRIVATE -O2 -Wall -Wextra -Wno-long-long -pedantic)
 
 add_subdirectory(examples)

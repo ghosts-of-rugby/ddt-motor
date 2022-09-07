@@ -3,21 +3,30 @@
 
 #include <stdint.h>
 
+#include <chrono>
 #include <memory>
 #include <optional>
+#include <vector>
 
 #include "ddt-motor/uart.hpp"
 
 namespace ddt {
+
+using namespace std::chrono_literals;  // NOLINT
 
 class Motor {
  private:
   static std::vector<Motor*> motors;
   std::shared_ptr<Uart> uart;
   uint8_t id;
+  std::chrono::milliseconds sleep_time;
 
  public:
-  enum class DriveMode { Current, Velocity, Angle };
+  enum class DriveMode : uint8_t {
+    Current = 0x01,
+    Velocity = 0x02,
+    Angle = 0x03,
+  };
   struct State {
     uint8_t id;
     DriveMode mode;
@@ -34,21 +43,24 @@ class Motor {
     bool sensor_fault;
   };
 
-  const static Uart::BaudRate uart_baudrate = Uart::BaudRate::B_115200;
-
   static void SetID(uint8_t id, std::shared_ptr<Uart> uart);
 
   static void CheckID(std::shared_ptr<Uart> uart);
 
-  Motor(std::shared_ptr<Uart> uart, uint8_t id);
+  Motor(std::shared_ptr<Uart> uart, uint8_t id,
+        std::chrono::milliseconds sleep_time = 5ms);
 
-  void Drive(double drive_value);
+  std::optional<State> DriveVelocity(double velocity, double acc = 0.0,
+                                     bool brake = false);
 
-  void Brake();
+  void SetMode(DriveMode mode);
 
-  static void BreakAll();
+  std::optional<State> Observe();
+
+ private:
+  std::optional<State> Drive(std::vector<uint8_t> data);
 };
 
 }  // namespace ddt
 
-#endif
+#endif  // DDT_MOTOR_MOTOR_HPP_
