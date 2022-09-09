@@ -6,7 +6,7 @@
 
 int main(int argc, char const *argv[]) {
   using namespace ddt;  // NOLINT
-  int id = 0x09;
+  int id;
 
   std::cout << "Input ID : ";
   std::cin >> id;

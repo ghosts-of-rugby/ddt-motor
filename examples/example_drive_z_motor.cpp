@@ -26,7 +26,7 @@ int main(int argc, char const *argv[]) {
   auto uart = std::make_shared<ddt::Uart>("/dev/ttyUSB0",
                                           ddt::Uart::BaudRate::B_115200);
 
-  ddt::Motor motor0(uart, 0x03, 3ms);
+  ddt::Motor motor0(uart, 0x03, 5ms);
 
   ddt::AngleFilter filter0;
 

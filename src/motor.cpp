@@ -57,6 +57,21 @@ std::optional<Motor::State> Motor::DriveVelocity(double velocity, double acc,
   return Drive(send);
 }
 
+std::optional<Motor::State> Motor::DriveCurrent(double current) {
+  int16_t val = static_cast<int16_t>(current * 32767.0 / 8.0);
+  std::vector<uint8_t> send = {id,    //
+                               0x64,  //
+                               uint8_t(val >> 8),
+                               uint8_t(val & 0x00ff),
+                               0,
+                               0,
+                               0,
+                               0,
+                               0};
+  send.emplace_back(dallas_crc8(send.begin(), send.end()));
+  return Drive(send);
+}
+
 std::optional<Motor::State> Motor::Observe() {
   std::vector<uint8_t> send = {id, 0x74, 0, 0, 0, 0, 0, 0, 0};
   send.emplace_back(dallas_crc8(send.begin(), send.end()));

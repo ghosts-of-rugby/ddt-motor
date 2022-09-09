@@ -1,6 +1,7 @@
 #include "ddt-motor/uart.hpp"
 
 #include <fcntl.h>
+#include <linux/serial.h>
 #include <sys/ioctl.h>
 
 #include <stdexcept>
@@ -63,7 +64,10 @@ int Uart::Open() {
         "Error from {},{} : tcsetattr({}, TCSANOW, &tty) failed"_fmt(
             __FILE__, __LINE__, fd));
   }
-
+  struct serial_struct serial_setting;
+  ioctl(fd, TIOCGSERIAL, &serial_setting);
+  serial_setting.flags |= ASYNC_LOW_LATENCY;
+  ioctl(fd, TIOCSSERIAL, &serial_setting);
   return fd;
 }
 
@@ -80,6 +84,7 @@ std::vector<uint8_t> Uart::Receive() {
   // read size of in buffer
   std::size_t available_size = 0;
   ioctl(fd, FIONREAD, &available_size);
+  // std::cout << available_size << std::endl;
   std::vector<uint8_t> data(available_size);
   size_t size = read(fd, data.data(), available_size);
   return data;

@@ -53,6 +53,8 @@ class Motor {
   std::optional<State> DriveVelocity(double velocity, double acc = 0.0,
                                      bool brake = false);
 
+  std::optional<State> DriveCurrent(double current);
+
   void SetMode(DriveMode mode);
 
   std::optional<State> Observe();
