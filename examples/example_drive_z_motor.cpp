@@ -8,15 +8,6 @@
 #include "ddt-motor/motor.hpp"
 #include "ddt-motor/uart.hpp"
 
-double clip(double x, double min, double max) {
-  if (x < min) {
-    return min;
-  } else if (x > max) {
-    return max;
-  }
-  return x;
-}
-
 int main(int argc, char const *argv[]) {
   using namespace ddt;  // NOLINT
   using second = std::chrono::duration<double>;
@@ -46,7 +37,7 @@ int main(int argc, char const *argv[]) {
       double angle = filter0.Update(state->angle);
 
       input = -5.0 * (ref_angle - angle);
-      input = clip(input, -max_velocity, max_velocity);
+      input = std::clamp(input, -max_velocity, max_velocity);
 
       ofs << elapsed.count() << "," << angle << "," << state->velocity << ","
           << input << std::endl;
