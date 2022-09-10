@@ -14,9 +14,8 @@ int main(int argc, char const* argv[]) {
   auto uart = std::make_shared<ddt::Uart>("/dev/ttyUSB0",
                                           ddt::Uart::BaudRate::B_115200);
 
-  std::vector<ddt::Motor> motors = {
-      // ddt::Motor(uart, 0x03),
-      ddt::Motor(uart, 0x06, 4ms), ddt::Motor(uart, 0x09, 4ms)};
+  std::vector<ddt::Motor> motors = {ddt::Motor(uart, 0x06, 4ms),
+                                    ddt::Motor(uart, 0x09, 4ms)};
 
   std::vector<ddt::AngleFilter> filters = {
       ddt::AngleFilter(), ddt::AngleFilter(), ddt::AngleFilter()};
@@ -28,6 +27,8 @@ int main(int argc, char const* argv[]) {
   }
 
   std::this_thread::sleep_for(std::chrono::seconds(1));
+
+  std::cout << "start" << std::endl;
   auto start = std::chrono::high_resolution_clock::now();
   for (int i = 0; true; i++) {
     auto elapsed = std::chrono::duration_cast<second>(

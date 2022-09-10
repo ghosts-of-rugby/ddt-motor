@@ -8,14 +8,7 @@
 #include "ddt-motor/motor.hpp"
 #include "ddt-motor/uart.hpp"
 
-double clip(double x, double min, double max) {
-  if (x < min) {
-    return min;
-  } else if (x > max) {
-    return max;
-  }
-  return x;
-}
+class MotorController {};
 
 int main(int argc, char const *argv[]) {
   using namespace ddt;  // NOLINT
@@ -26,16 +19,14 @@ int main(int argc, char const *argv[]) {
   auto uart = std::make_shared<ddt::Uart>("/dev/ttyUSB0",
                                           ddt::Uart::BaudRate::B_115200);
 
-  ddt::Motor motor0(uart, 0x03);
-  ddt::Motor motor1(uart, 0x06);
-  ddt::Motor motor2(uart, 0x09);
+  ddt::Motor motor_right(uart, 0x06);
+  ddt::Motor motor_left(uart, 0x09);
 
-  ddt::AngleFilter filter0;
   ddt::AngleFilter filter1;
   ddt::AngleFilter filter2;
 
-  motor1.SetMode(ddt::Motor::DriveMode::Velocity);
-  motor2.SetMode(ddt::Motor::DriveMode::Velocity);
+  motor_right.SetMode(ddt::Motor::DriveMode::Velocity);
+  motor_left.SetMode(ddt::Motor::DriveMode::Velocity);
 
   double motor1_input = 0.0;
   double motor2_input = 0.0;
@@ -49,8 +40,13 @@ int main(int argc, char const *argv[]) {
   auto start = std::chrono::high_resolution_clock::now();
 
   for (int i = 0; i < 1000; i++) {
-    auto state1 = motor1.DriveVelocity(motor1_input);
-    auto state2 = motor2.DriveVelocity(motor2_input);
+    motor_right.SendVelocityCommand(motor1_input);
+    std::this_thread::sleep_for(5ms);
+    auto state1 = motor_right.ReceiveSpinMotorFeedback();
+
+    motor_left.SendVelocityCommand(motor2_input);
+    std::this_thread::sleep_for(5ms);
+    auto state2 = motor_left.ReceiveSpinMotorFeedback();
 
     if (state1.has_value() && state2.has_value()) {
       auto elapsed = std::chrono::duration_cast<second>(
@@ -62,9 +58,9 @@ int main(int argc, char const *argv[]) {
       motor2_input = -5 * (motor2_angle_ref - angle2);
 
       motor1_input =
-          clip(motor1_input, -motor1_velocity_max, motor1_velocity_max);
+          std::clamp(motor1_input, -motor1_velocity_max, motor1_velocity_max);
       motor2_input =
-          clip(motor2_input, -motor2_velocity_max, motor2_velocity_max);
+          std::clamp(motor2_input, -motor2_velocity_max, motor2_velocity_max);
 
       ofs << elapsed.count() << "," << angle1 << "," << state1->velocity << ","
           << angle2 << "," << state2->velocity << std::endl;
@@ -72,7 +68,7 @@ int main(int argc, char const *argv[]) {
       std::cout << "connection error!!" << std::endl;
     }
   }
-  auto state1 = motor1.DriveVelocity(0.0);
-  auto state2 = motor2.DriveVelocity(0.0);
+  auto state1 = motor_right.DriveVelocity(0.0, 0.0, true);
+  auto state2 = motor_left.DriveVelocity(0.0, 0.0, true);
   return 0;
 }

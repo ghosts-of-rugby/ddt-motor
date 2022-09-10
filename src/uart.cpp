@@ -77,7 +77,7 @@ void Uart::Open() {
   return;
 }
 
-void Uart::Send(std::vector<uint8_t> data) {
+void Uart::Send(Uart::Packet data) {
   size_t size = write(fd, data.data(), data.size());
   if (size != data.size()) {
     throw std::runtime_error(
@@ -86,7 +86,7 @@ void Uart::Send(std::vector<uint8_t> data) {
   }
 }
 
-std::vector<uint8_t> Uart::Receive() {
+Uart::Packet Uart::Receive() {
   // read size of in buffer
   std::size_t available_size = 0;
   ioctl(fd, FIONREAD, &available_size);

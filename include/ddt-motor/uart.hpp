@@ -12,6 +12,7 @@ namespace ddt {
 
 class Uart {
  public:
+  using Packet = std::vector<uint8_t>;
   enum class BaudRate : speed_t {
     B_9600 = B9600,
     B_19200 = B19200,
@@ -38,8 +39,8 @@ class Uart {
        BaudRate baudrate = BaudRate::B_115200);
   ~Uart();
 
-  void Send(std::vector<uint8_t> data);
-  std::vector<uint8_t> Receive();
+  void Send(Packet data);
+  Packet Receive();
 
   void Open();
 };

@@ -17,7 +17,7 @@ int main(int argc, char const *argv[]) {
   auto uart = std::make_shared<ddt::Uart>("/dev/ttyUSB0",
                                           ddt::Uart::BaudRate::B_115200);
 
-  ddt::Motor motor0(uart, 0x03, 5ms);
+  ddt::Motor motor0(uart, 0x03);
 
   ddt::AngleFilter filter0;
 
@@ -30,7 +30,10 @@ int main(int argc, char const *argv[]) {
   auto start = std::chrono::high_resolution_clock::now();
 
   for (int i = 0; i < 1000; i++) {
-    auto state = motor0.DriveVelocity(input, 0.0);
+    motor0.SendVelocityCommand(input);
+    std::this_thread::sleep_for(5ms);
+    auto state = motor0.ReceiveSpinMotorFeedback();
+
     if (state.has_value()) {
       auto elapsed = std::chrono::duration_cast<second>(
           std::chrono::high_resolution_clock::now() - start);
@@ -45,6 +48,6 @@ int main(int argc, char const *argv[]) {
       std::cout << "conncection error !!" << std::endl;
     }
   }
-  motor0.DriveVelocity(0.0, 0.0);
+  motor0.DriveVelocity(0.0, 0.0, true);
   return 0;
 }

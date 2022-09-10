@@ -34,9 +34,9 @@ int main(int argc, char const* argv[]) {
   std::this_thread::sleep_for(std::chrono::seconds(1));
   auto start = std::chrono::high_resolution_clock::now();
   for (int i = 0; true; i++) {
-    // auto state = motor_theta.DriveVelocity(1.0);
-    // auto state = motor_theta.DriveCurrent(current);
-    auto state = motor_theta.DriveCurrent(current);
+    motor_theta.SendCurrentCommand(current);
+    std::this_thread::sleep_for(5ms);
+    auto state = motor_theta.ReceiveSpinMotorFeedback();
 
     if (state.has_value()) {
       auto elapsed = std::chrono::duration_cast<second>(

@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -16,7 +17,6 @@ using namespace std::chrono_literals;  // NOLINT
 
 class Motor {
  private:
-  static std::vector<Motor*> motors;
   std::shared_ptr<Uart> uart;
   uint8_t id;
   std::chrono::milliseconds sleep_time;
@@ -27,6 +27,7 @@ class Motor {
     Velocity = 0x02,
     Angle = 0x03,
   };
+
   struct State {
     uint8_t id;
     DriveMode mode;
@@ -43,12 +44,25 @@ class Motor {
     bool sensor_fault;
   };
 
+ public:
   static void SetID(uint8_t id, std::shared_ptr<Uart> uart);
 
   static void CheckID(std::shared_ptr<Uart> uart);
 
   Motor(std::shared_ptr<Uart> uart, uint8_t id,
         std::chrono::milliseconds sleep_time = 5ms);
+
+  void SendSetModeCommand(DriveMode mode);
+  void SendVelocityCommand(double velocity, double acc = 0.0,
+                           bool brake = false);
+  void SendCurrentCommand(double current);
+  void SendObserveCommand();
+
+  std::optional<State> ReceiveSpinMotorFeedback();
+  std::optional<State> ReceiveObserveFeedback();
+
+  Uart::Packet GetObserveCommand();
+  Uart::Packet GetSetModeCommand();
 
   std::optional<State> DriveVelocity(double velocity, double acc = 0.0,
                                      bool brake = false);
@@ -58,9 +72,6 @@ class Motor {
   void SetMode(DriveMode mode);
 
   std::optional<State> Observe();
-
- private:
-  std::optional<State> Drive(std::vector<uint8_t> data);
 };
 
 }  // namespace ddt
