@@ -36,11 +36,12 @@ class Uart {
  public:
   Uart(std::string dev = "/dev/ttyUSB0",
        BaudRate baudrate = BaudRate::B_115200);
+  ~Uart();
 
   void Send(std::vector<uint8_t> data);
   std::vector<uint8_t> Receive();
 
-  int Open();
+  void Open();
 };
 
 }  // namespace ddt

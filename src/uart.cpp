@@ -5,6 +5,7 @@
 #include <sys/ioctl.h>
 
 #include <stdexcept>
+#include <thread>
 
 #include "ddt-motor/myformat.hpp"
 
@@ -13,18 +14,23 @@
 namespace ddt {
 
 Uart::Uart(std::string dev, BaudRate baudrate)
-    : dev(dev.c_str()), baudrate(baudrate) {
-  fd = Open();
+    : dev(dev.c_str()), baudrate(baudrate), fd(-1) {
+  Open();
 }
+Uart::~Uart() { close(fd); }
 
-int Uart::Open() {
+void Uart::Open() {
   termios tty;
-  auto fd = open(dev, O_RDWR);
-  if (fd == -1) {
-    throw std::runtime_error(
-        "Error from {},{} : Cannot open {}"_fmt(__FILE__, __LINE__, dev));
+
+  for (int i = 0;; i++) {
+    fd = open(dev, O_RDWR);
+    if (fd == -1) {
+      if (i == 0) std::cout << "Connect USB to {}"_fmt(dev) << std::endl;
+    } else {
+      break;
+    }
+    std::this_thread::sleep_for(std::chrono::seconds(1));
   }
-  // fcntl(fd, F_SETFL, 0);
 
   cfsetispeed(&tty, static_cast<speed_t>(baudrate));
   cfsetospeed(&tty, static_cast<speed_t>(baudrate));
@@ -68,7 +74,7 @@ int Uart::Open() {
   ioctl(fd, TIOCGSERIAL, &serial_setting);
   serial_setting.flags |= ASYNC_LOW_LATENCY;
   ioctl(fd, TIOCSSERIAL, &serial_setting);
-  return fd;
+  return;
 }
 
 void Uart::Send(std::vector<uint8_t> data) {
@@ -84,7 +90,6 @@ std::vector<uint8_t> Uart::Receive() {
   // read size of in buffer
   std::size_t available_size = 0;
   ioctl(fd, FIONREAD, &available_size);
-  // std::cout << available_size << std::endl;
   std::vector<uint8_t> data(available_size);
   size_t size = read(fd, data.data(), available_size);
   return data;
