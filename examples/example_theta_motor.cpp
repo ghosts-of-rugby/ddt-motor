@@ -16,7 +16,7 @@ int main(int argc, char const* argv[]) {
                                           ddt::Uart::BaudRate::B_115200);
 
   ddt::Motor motor_theta(uart, 0x06, 5ms);
-  ddt::Observer observer(0.005, 7.2, -10, -20);
+  ddt::Observer observer(7.2, -10, -20);
   ddt::AngleFilter angle_filter_theta;
 
   double current = 0.0;
@@ -43,7 +43,7 @@ int main(int argc, char const* argv[]) {
           std::chrono::high_resolution_clock::now() - start);
       double angle = angle_filter_theta.Update(state->angle);
 
-      auto [vel_est, dis_est] = observer.Update(current, state->velocity);
+      auto [vel_est, dis_est] = observer.Update(current, state->velocity, 5ms);
 
       current =
           0.5 * (ref_velocity - vel_est) - 0.5 * (ref_angle - angle) + dis_est;

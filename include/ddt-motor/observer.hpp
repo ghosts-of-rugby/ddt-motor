@@ -1,6 +1,7 @@
 #ifndef DDT_MOTOR_OBSERVER_HPP_
 #define DDT_MOTOR_OBSERVER_HPP_
 
+#include <chrono>
 #include <tuple>
 
 #include "eigen3/Eigen/Dense"
@@ -9,8 +10,9 @@ namespace ddt {
 
 class Observer {
  private:
-  double period;
-  double K;
+  using second = std::chrono::duration<double>;
+
+  double K;  // dω/dt = K * i
 
   Eigen::Matrix2d A;
   Eigen::Vector2d B;
@@ -19,8 +21,11 @@ class Observer {
   Eigen::Vector2d x_est;
 
  public:
-  explicit Observer(double period, double K, double pole0, double pole1);
-  std::tuple<double, double> Update(double current, double velocity);
+  explicit Observer(double K, double pole0, double pole1);
+  std::tuple<double, double> Update(double current,      // current input
+                                    double velocity,     // observed velocity
+                                    Observer::second dt  // duration
+  );
 };
 
 }  // namespace ddt
