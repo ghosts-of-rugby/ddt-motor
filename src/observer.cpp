@@ -1,5 +1,7 @@
 #include "ddt-motor/observer.hpp"
 
+// #include <iostream>
+
 namespace ddt {
 Observer::Observer(double K, double pole0, double pole1) : K(K) {
   A << 0, 0, 0, -K;
@@ -15,9 +17,9 @@ Observer::Observer(double K, double pole0, double pole1) : K(K) {
 
 std::tuple<double, double> Observer::Update(double current, double velocity,
                                             Observer::second dt) {
-  Eigen::Vector2d dxdt_pred =
-      A * x_est + B * current - Gain * (velocity - C * x_est);
-  x_est += dxdt_pred * dt.count();
+  Eigen::Vector2d dxdt_pred = A * x_est + B * current;
+  Eigen::Vector2d x_pred = x_est + dxdt_pred * dt.count();
+  x_est = x_pred - Gain * (velocity - C * x_pred) * dt.count();
   return std::make_tuple(x_est(0), x_est(1));
 }
 
