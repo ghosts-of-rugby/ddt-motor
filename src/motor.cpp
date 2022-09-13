@@ -79,6 +79,7 @@ void Motor::SendObserveCommand() {
 std::optional<Motor::State> Motor::ReceiveSpinMotorFeedback() {
   auto data = uart->Receive();
   if (data.size() == 10 && data[0] == id) {
+    uint8_t fault_value = data[8];
     Motor::State state{
         .id = data[0],
         .mode = static_cast<Motor::DriveMode>(data[1]),
@@ -89,11 +90,16 @@ std::optional<Motor::State> Motor::ReceiveSpinMotorFeedback() {
         .angle = static_cast<double>(combine<int16_t>(data[6], data[7])) /
                  32767.0 * 2 * M_PI,
         .stator_temperature = 0.0,
-        .over_heat = false,
-        .stall = false,
-        .phase_over_current = false,
-        .bus_over_currnet = false,
-        .sensor_fault = false,
+        // .over_heat = false,
+        // .stall = false,
+        // .phase_over_current = false,
+        // .bus_over_currnet = false,
+        // .sensor_fault = false,
+        .over_heat = static_cast<bool>(fault_value & 0b00010000),
+        .stall = static_cast<bool>(fault_value & 0b00001000),
+        .phase_over_current = static_cast<bool>(fault_value & 0b00000100),
+        .bus_over_currnet = static_cast<bool>(fault_value & 0b00000010),
+        .sensor_fault = static_cast<bool>(fault_value & 0b00000001),
     };
     return state;
   }
