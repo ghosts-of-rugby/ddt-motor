@@ -43,6 +43,8 @@ class Uart {
   Packet Receive();
 
   void Open();
+  void Close();
+
 };
 
 }  // namespace ddt

@@ -17,7 +17,11 @@ Uart::Uart(std::string dev, BaudRate baudrate)
     : dev(dev.c_str()), baudrate(baudrate), fd(-1) {
   Open();
 }
-Uart::~Uart() { close(fd); }
+Uart::~Uart() { Close(); }
+
+void Uart::Close() {
+  close(fd);
+}
 
 void Uart::Open() {
   termios tty;
