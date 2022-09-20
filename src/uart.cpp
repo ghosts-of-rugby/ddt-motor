@@ -14,10 +14,13 @@
 namespace ddt {
 
 Uart::Uart(std::string dev, BaudRate baudrate)
-    : dev(dev.c_str()), baudrate(baudrate), fd(-1) {
+    : dev(dev), baudrate(baudrate), fd(-1) {
   Open();
 }
-Uart::~Uart() { Close(); }
+Uart::~Uart() { 
+  std::cout << "destractor called" << std::endl;
+  Close();
+}
 
 void Uart::Close() {
   close(fd);
@@ -27,9 +30,9 @@ void Uart::Open() {
   termios tty;
 
   for (int i = 0;; i++) {
-    fd = open(dev, O_RDWR);
+    fd = open(dev.c_str(), O_RDWR);
     if (fd == -1) {
-      if (i == 0) std::cout << "Connect USB to {}"_fmt(dev) << std::endl;
+      if (i == 0) std::cout << "Connect USB to {}"_fmt(dev.c_str()) << std::endl;
     } else {
       break;
     }

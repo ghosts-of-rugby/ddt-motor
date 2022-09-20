@@ -30,7 +30,7 @@ class Uart {
   };
 
  private:
-  const char* dev;          // device
+  std::string dev;          // device
   const BaudRate baudrate;  // baudrate
   int fd;                   // file discriptor
 
